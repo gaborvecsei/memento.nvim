@@ -4,6 +4,7 @@ local popup = require("plenary.popup")
 
 local M = {}
 
+-- TODO: global variables should be global?
 -- Popup window
 Buf = nil
 Win = nil
@@ -71,7 +72,7 @@ local function create_popup_content()
     local contents = {}
     for i, x in ipairs(Data.list) do
         -- TODO: check if it is more then the popup window width, and shorten the path until it fits
-        contents[#contents+1] = string.format("%d: %s, %s, %d", i, x.date, x.path, x.line_number)
+        contents[#contents+1] = string.format("%s, %s, %d", x.date, x.path, x.line_number)
     end
     return contents
 end
@@ -94,6 +95,8 @@ function M.toggle()
     vim.api.nvim_buf_set_option(Buf, "filetype", "memento")
     vim.api.nvim_buf_set_option(Buf, "buftype", "acwrite")
     vim.api.nvim_buf_set_option(Buf, "bufhidden", "delete")
+    vim.api.nvim_buf_set_option(Buf, "modifiable", false)
+    vim.api.nvim_win_set_cursor(0, {#contents, 0})
 
     -- Keymappings for the opened window
     vim.api.nvim_buf_set_keymap(
@@ -101,6 +104,13 @@ function M.toggle()
         "n",
         "q",
         ":lua require('memento').toggle()<CR>",
+        { silent = true }
+    )
+    vim.api.nvim_buf_set_keymap(
+        Buf,
+        "n",
+        "o",
+        ":lua require('memento').open_selected()<CR>",
         { silent = true }
     )
 end
@@ -112,6 +122,15 @@ function M.store_position()
         add_item_to_list(info.path, info.line, info.character)
         M.save()
     end
+end
+
+function M.open_selected()
+    local line_number, char_number = unpack(vim.api.nvim_win_get_cursor(0))
+    local selected_item = Data.list[line_number]
+    M.toggle()
+    vim.api.nvim_command(string.format("e %s", selected_item.path))
+    -- TODO: can't we include the "line jump" in the edit command?
+    vim.api.nvim_command(string.format(":%d", selected_item.line_number))
 end
 
 function M.save()
