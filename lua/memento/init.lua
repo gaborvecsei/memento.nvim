@@ -13,14 +13,14 @@ end
 local data = create_data()
 
 local function get_current_buffer_info()
-    local path_to_file = vim.fn.expand('%:p')
+    local path_to_file = vim.fn.expand("%:p")
     local cursor_info = vim.api.nvim_win_get_cursor(0)
     return {path = path_to_file, line = cursor_info[1], character = cursor_info[2]}
 end
 
 local function add_item_to_list(path, line_number, char_number)
     -- Add an entry to the list with the given predefined format
-    local data_table = {path = path, line_number = line_number, char_number = char_number}
+    local data_table = {path = path, line_number = line_number, char_number = char_number, date = os.date("%c")}
     List.add(data, data_table)
 end
 
@@ -44,7 +44,7 @@ end
 
 function M.debug_show()
     for i, x in ipairs(data.list) do
-        print(i, x.path, x.line_number, x.char_number)
+        print(i, x.date, x.path, x.line_number, x.char_number)
     end
 end
 
