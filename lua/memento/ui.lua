@@ -31,14 +31,14 @@ local function create_window(width, height)
     return {bufnr = bufnr, win_id = win_id}
 end
 
-local function create_content(data_list, shorten_path)
+local function create_content(history_data, shorten_path)
     local contents = {}
-    for _, x in ipairs(data_list.list) do
+    for _, x in ipairs(history_data.data) do
         local path = x.path
         if shorten_path then
             path = Path:new(path):shorten(1)
         end
-        local date_str = string.format("%d/%d %d:%d", x.date.month, x.date.day, x.date.hour, x.date.min)
+        local date_str = string.format("%0d/%0d %0d:%0d", x.date.month, x.date.day, x.date.hour, x.date.min)
         contents[#contents+1] = string.format("%s, %s, %d", date_str, path, x.line_number)
     end
     return contents
@@ -56,14 +56,14 @@ local function set_popup_contents(contents)
     end
 end
 
-function M.create_popup(data_list, width, height, shorten_path)
+function M.create_popup(history_data, width, height, shorten_path)
     -- Create a new popup window, and fill buffer with contents
 
     local popup_info = create_window(width, height)
     PopupWindow = popup_info.win_id
     PopupBuffer = popup_info.bufnr
 
-    local contents = create_content(data_list, shorten_path)
+    local contents = create_content(history_data, shorten_path)
     set_popup_contents(contents)
 
     return {window = PopupWindow, buffer = PopupBuffer}
@@ -71,13 +71,13 @@ end
 
 function M.close_window()
     -- Close the popup window if it is opened
-
     if PopupWindow ~= nil and vim.api.nvim_win_is_valid(PopupWindow) then
         vim.api.nvim_win_close(PopupWindow, true)
         PopupWindow = nil
         PopupBuffer = nil
         return true
     end
+
     return false
 end
 

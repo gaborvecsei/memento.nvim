@@ -13,7 +13,7 @@ local function create_data()
 end
 
 -- History data is stored here
-local DataList = create_data()
+local HistoryData = create_data()
 
 local function get_current_buffer_info()
     -- https://vi.stackexchange.com/a/34983/38739 - this is why vim.fn.expand("%:p") is not good
@@ -25,12 +25,15 @@ end
 -- Add an entry to the list with the given predefined format
 local function add_item_to_list(path, line_number, char_number)
     local data_table = {path = path, line_number = line_number, char_number = char_number, date = os.date("*t")}
-    List.add(DataList, data_table)
+    List.add(HistoryData, data_table)
 end
 
 function M.toggle()
-    Ui.close_window()
-    local popup_info = Ui.create_popup(DataList, vim.g.memento_window_width, vim.g.memento_window_height)
+    local is_closed = Ui.close_window()
+    if is_closed then
+        return
+    end
+    local popup_info = Ui.create_popup(HistoryData, vim.g.memento_window_width, vim.g.memento_window_height, vim.g.memento_shorten_path)
 
     -- Keymappings for the opened popup window
     vim.api.nvim_buf_set_keymap(
@@ -60,22 +63,22 @@ end
 
 function M.open_selected()
     local line_number, _ = unpack(vim.api.nvim_win_get_cursor(0))
-    local selected_item = DataList.list[line_number]
+    local selected_item = HistoryData.data[line_number]
     Ui.close_window()
     vim.api.nvim_command(string.format("e %s", selected_item.path))
     vim.api.nvim_command(string.format(":%d", selected_item.line_number))
 end
 
 function M.save()
-    CachePath:write(List.to_json(DataList), "w")
+    CachePath:write(List.to_json(HistoryData), "w")
 end
 
 function M.load()
-    List.from_json(DataList, CachePath:read())
+    List.from_json(HistoryData, CachePath:read())
 end
 
 function M.clear_history()
-    DataList = create_data()
+    HistoryData = create_data()
     -- We just overwrite the file with an empty table
     M.save()
 end
