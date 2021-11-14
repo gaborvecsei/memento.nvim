@@ -3,7 +3,9 @@ local vim = vim
 local M = {}
 
 --[[
-    Dummy FIFO list (queue) implementation
+    Dummy FIFO list (queue) implementation, with a maximum number of items
+    (automatically removing oldest ones, when new items are added and max number of items reached)
+
     Operations:
         - new(): creates a new list
         - add(): adds a new element to a list
