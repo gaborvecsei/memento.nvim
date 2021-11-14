@@ -8,9 +8,8 @@ local M = {}
 local PopupBuffer = nil
 local PopupWindow = nil
 
+-- Construct the popup window and buffer
 local function create_window(width, height)
-    -- Creates a popup window where we will show the prices
-
     width = width or 80
     height = height or 12
     local borderchars = { "─", "│", "─", "│", "╭", "╮", "╯", "╰" }
@@ -31,6 +30,7 @@ local function create_window(width, height)
     return {bufnr = bufnr, win_id = win_id}
 end
 
+-- Given a history data, construct the lines which we will display in the popup buffer
 local function create_content(history_data, shorten_path)
     local contents = {}
     for _, x in ipairs(history_data.data) do
@@ -44,6 +44,7 @@ local function create_content(history_data, shorten_path)
     return contents
 end
 
+-- Set the popup buffer contents, and set some basic options for the buffer
 local function set_popup_contents(contents)
     vim.api.nvim_buf_set_name(PopupBuffer, "memento-menu")
     vim.api.nvim_buf_set_lines(PopupBuffer, 0, #contents, false, contents)
@@ -56,9 +57,8 @@ local function set_popup_contents(contents)
     end
 end
 
+-- Create a new popup window, and fill buffer with contents
 function M.create_popup(history_data, width, height, shorten_path)
-    -- Create a new popup window, and fill buffer with contents
-
     local popup_info = create_window(width, height)
     PopupWindow = popup_info.win_id
     PopupBuffer = popup_info.bufnr
@@ -69,15 +69,14 @@ function M.create_popup(history_data, width, height, shorten_path)
     return {window = PopupWindow, buffer = PopupBuffer}
 end
 
-function M.close_window()
-    -- Close the popup window if it is opened
+-- Close the popup window if it is opened
+function M.close_popup()
     if PopupWindow ~= nil and vim.api.nvim_win_is_valid(PopupWindow) then
         vim.api.nvim_win_close(PopupWindow, true)
         PopupWindow = nil
         PopupBuffer = nil
         return true
     end
-
     return false
 end
 

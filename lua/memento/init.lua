@@ -15,8 +15,8 @@ end
 -- History data is stored here
 local HistoryData = create_data()
 
+-- https://vi.stackexchange.com/a/34983/38739 - this is why vim.fn.expand("%:p") is not good
 local function get_current_buffer_info()
-    -- https://vi.stackexchange.com/a/34983/38739 - this is why vim.fn.expand("%:p") is not good
     local path_to_file = vim.fn.expand("<afile>:p")
     local cursor_info = vim.api.nvim_win_get_cursor(0)
     return {path = path_to_file, line = cursor_info[1], character = cursor_info[2]}
@@ -29,7 +29,7 @@ local function add_item_to_list(path, line_number, char_number)
 end
 
 function M.toggle()
-    local is_closed = Ui.close_window()
+    local is_closed = Ui.close_popup()
     if is_closed then
         return
     end
@@ -52,8 +52,8 @@ function M.toggle()
     )
 end
 
+-- Record file path, line number and char position, then write to a file and save the file
 function M.store_position()
-    -- Record file path, line number and char position, then write to a file and save the file
     local info = get_current_buffer_info()
     if (info.path ~= nil and info.path ~= "" and Path:new(info.path):exists()) then
         add_item_to_list(info.path, info.line, info.character)
@@ -61,22 +61,26 @@ function M.store_position()
     end
 end
 
+-- Open the selected (rfom popup buffer) file in a new buffer at the defined line number
 function M.open_selected()
     local line_number, _ = unpack(vim.api.nvim_win_get_cursor(0))
     local selected_item = HistoryData.data[line_number]
-    Ui.close_window()
+    Ui.close_popup()
     vim.api.nvim_command(string.format("e %s", selected_item.path))
     vim.api.nvim_command(string.format(":%d", selected_item.line_number))
 end
 
+-- Save history to the defined cache file
 function M.save()
     CachePath:write(List.to_json(HistoryData), "w")
 end
 
+-- Load history from the defined cached file
 function M.load()
     List.from_json(HistoryData, CachePath:read())
 end
 
+-- Remove all items from the history (clear the cache file as well)
 function M.clear_history()
     HistoryData = create_data()
     -- We just overwrite the file with an empty table
@@ -101,6 +105,7 @@ function M.setup(opts)
     set_default("window_height", 14)
 end
 
+-- Default setup
 M.setup({})
 
 return M
