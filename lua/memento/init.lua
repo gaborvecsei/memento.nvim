@@ -19,7 +19,8 @@ end
 local Data = create_data()
 
 local function get_current_buffer_info()
-    local path_to_file = vim.fn.expand("%:p")
+    -- https://vi.stackexchange.com/a/34983/38739 - this is why vim.fn.expand("%:p") is not good
+    local path_to_file = vim.fn.expand("<afile>:p")
     local cursor_info = vim.api.nvim_win_get_cursor(0)
     return {path = path_to_file, line = cursor_info[1], character = cursor_info[2]}
 end
