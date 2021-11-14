@@ -4,19 +4,19 @@ local popup = require("plenary.popup")
 
 local M = {}
 
--- TODO: global variables should be global?
--- Popup window
-Buf = nil
-Win = nil
+-- Popup window (buffer and window id)
+local Buf = nil
+local Win = nil
 
+-- This is where we store the history
 local cache_path = Path:new(string.format("%s/memento.json", vim.fn.stdpath("data")))
 
 local function create_data()
-    -- TODO: make the max number of items configurable
-    return List.new(10)
+    return List.new(vim.g.memento_history)
 end
 
-Data = create_data()
+-- History data is stored here
+local Data = create_data()
 
 local function get_current_buffer_info()
     local path_to_file = vim.fn.expand("%:p")
@@ -26,7 +26,8 @@ end
 
 local function add_item_to_list(path, line_number, char_number)
     -- Add an entry to the list with the given predefined format
-    local data_table = {path = path, line_number = line_number, char_number = char_number, date = os.date("%c")}
+
+    local data_table = {path = path, line_number = line_number, char_number = char_number, date = os.date("*t")}
     List.add(Data, data_table)
 end
 
@@ -45,19 +46,12 @@ local function create_window(width, height)
         col = math.floor((vim.o.columns - width) / 2),
         minwidth = width,
         minheight = height,
-        borderchars = borderchars,
+        borderchars = borderchars
     })
 
-    vim.api.nvim_win_set_option(
-        win.border.win_id,
-        "winhl",
-        "Normal:MementoBorder"
-    )
+    vim.api.nvim_win_set_option(win.border.win_id, "winhl", "Normal:MementoBorder")
 
-    return {
-        bufnr = bufnr,
-        win_id = win_id,
-    }
+    return {bufnr = bufnr, win_id = win_id}
 end
 
 local function close_window()
@@ -71,8 +65,12 @@ end
 local function create_popup_content()
     local contents = {}
     for i, x in ipairs(Data.list) do
-        -- TODO: check if it is more then the popup window width, and shorten the path until it fits
-        contents[#contents+1] = string.format("%s, %s, %d", x.date, x.path, x.line_number)
+        local path = x.path
+        if vim.g.memento_shorten_path then
+            path = Path:new(path):shorten(1)
+        end
+        local date_str = string.format("%d/%d %d:%d", x.date.month, x.date.day, x.date.hour, x.date.min)
+        contents[#contents+1] = string.format("%s, %s, %d", date_str, path, x.line_number)
     end
     return contents
 end
@@ -85,7 +83,7 @@ function M.toggle()
     end
 
     -- Create the window, and assign the global variables, so we can use later
-    local win_info = create_window()
+    local win_info = create_window(vim.g.memento_window_width, vim.g.memento_window_height)
     Win = win_info.win_id
     Buf = win_info.bufnr
 
@@ -96,7 +94,9 @@ function M.toggle()
     vim.api.nvim_buf_set_option(Buf, "buftype", "acwrite")
     vim.api.nvim_buf_set_option(Buf, "bufhidden", "delete")
     vim.api.nvim_buf_set_option(Buf, "modifiable", false)
-    vim.api.nvim_win_set_cursor(0, {#contents, 0})
+    if #contents > 0 then
+        vim.api.nvim_win_set_cursor(0, {#contents, 0})
+    end
 
     -- Keymappings for the opened window
     vim.api.nvim_buf_set_keymap(
@@ -138,34 +138,34 @@ function M.save()
 end
 
 function M.load()
-    -- TODO: immutable or mutable (should I return with the modified object itself?
-    Data = List.from_json(Data, cache_path:read())
+    List.from_json(Data, cache_path:read())
 end
 
-function M.debug_show()
-    for i, x in ipairs(Data.list) do
-        print(i, x.date, x.path, x.line_number, x.char_number)
-    end
-end
-
-function M.debug_clear()
+function M.clear_history()
     Data = create_data()
     -- We just overwrite the file with an empty table
     M.save()
 end
     
-function M.setup()
-    -- When deleting a buffer, record the infos
-    vim.api.nvim_exec(
-        [[
-        augroup AutoMementoGroup
-            autocmd!
-            autocmd BufUnload * lua require("memento").store_position()
-            autocmd VimEnter * lua require("memento").load()
-            autocmd ExitPre * lua require("memento").save()
-        augroup END
-        ]], false)
+function M.setup(opts)
+    local function set_default(opt, default)
+        local prefix = "memento_"
+		if vim.g[prefix .. opt] ~= nil then
+			return
+		elseif opts[opt] ~= nil then
+			vim.g[prefix .. opt] = opts[opt]
+		else
+			vim.g[prefix .. opt] = default
+		end
+	end
+
+    set_default("history", 20)
+    set_default("shorten_path", true)
+    set_default("window_width", 80)
+    set_default("window_height", 14)
 end
+
+M.setup({})
 
 return M
 
