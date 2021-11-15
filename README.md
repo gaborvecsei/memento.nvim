@@ -2,6 +2,8 @@
 
 A NeoVim plugin which remembers where you've been
 
+![Memento](art/memento.png)
+
 When a buffer is deleted (e.g.: `:q`, `:bd`) `memento.nvim` stores the filepath, and current line number so
 you can check your history and easily go back to a file. The history is persistent across sessions.
 
@@ -11,7 +13,7 @@ you can check your history and easily go back to a file. The history is persiste
 > With this plugin you just hit the right keys (or call `:lua require("memento").toggle()`)
 > and you can check your history and open them up again easily from a popup menu.
 
-*(The plugin is mostly for personal use, but PRs are welcome)*
+*(The plugin is mostly for my personal use, but PRs are welcome)*
 
 # Install
 
@@ -28,6 +30,14 @@ Plug 'gaborvecsei/memento.nvim'
 
 -- Clear history
 :lua require("memento").clear_history()
+```
+
+When the popup is visible, you can **close it with `q`** and **open up any file at any line by hitting `<CR>`**
+
+## Keybinding
+
+```lua
+nnoremap <leader>mh <cmd>lua require('memento').toggle()<CR>
 ```
 
 # Configuration
