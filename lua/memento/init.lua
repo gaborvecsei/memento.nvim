@@ -88,6 +88,11 @@ function M.clear_history()
 end
 
 function M.setup(opts)
+    if CachePath:exists() ~= true then
+        -- If the cache file does not exists, let's create it with the empty data holder
+        M.save()
+    end
+
     local function set_default(opt, default)
         local prefix = "memento_"
 		if vim.g[prefix .. opt] ~= nil then
