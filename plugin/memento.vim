@@ -4,3 +4,6 @@ augroup AutoMementoGroup
     autocmd VimEnter * lua require("memento").load()
 augroup END
 
+command! MementoToggle lua require("memento").toggle()
+command! MementoClearHistory lua require("memento").clear_history()
+
